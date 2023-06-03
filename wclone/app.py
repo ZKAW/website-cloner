@@ -1,30 +1,15 @@
+#!/usr/bin/python3
 import requests
 import functools
 import shutil
 import codecs
 import sys
 import os
+import logging
 
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
-
-# URL of the web page you want to extract data from
-url = "https://google.com"
-use_tor_network = False
-
-
-if len(sys.argv) > 1: url = sys.argv[1]
-output_folder = urlparse(url).netloc
-
-# initialize a session
-session = requests.session()
-if use_tor_network:
-    session.request = functools.partial(session.request, timeout=30)
-    session.proxies = {'http':  'socks5h://localhost:9050',
-                        'https': 'socks5h://localhost:9050'}
-
-# define workspace from script location
-workspace = os.path.dirname(os.path.realpath(__file__))
+from . import __version__,__description__
 
 class Extractor:
     def __init__(self, url):
@@ -42,7 +27,8 @@ class Extractor:
             content = session.get(url)
             content.encoding = 'utf-8'
             return content.text
-        except: return None
+        except Exception as e:
+        	sys.exit(logging.critical(get_excep(e)))
 
     # get the script files    
     def scrap_scripts(self):
@@ -203,7 +189,7 @@ class Extractor:
         response = session.get(url)
         with open(output_path, "wb") as file:
             file.write(response.content)
-            print(f"Downloaded {file_name} to {os.path.relpath(output_path)}")
+            logging.info(f"Downloaded {file_name} to {os.path.relpath(output_path)}")
         
         return True
     
@@ -224,12 +210,51 @@ class Extractor:
         with codecs.open(output_path, 'w', 'utf-8') as file:
             file.write(prettyHTML)
             file.close()
-            print(f"Saved index.html to {os.path.relpath(output_path)}")
+            logging.info(f"Saved index.html to {os.path.relpath(output_path)}")
         
         return True
 
-extractor = Extractor(url)
+def main():
+	import argparse
+	parser = argparse.ArgumentParser(description=__description__)
+	parser.add_argument('host',help="URL pointing to a website")
+	parser.add_argument('-v','---version',action="version",version=f"%(prog)s {__version__}") 
+	parser.add_argument("-tp","--tor-proxy",metavar="PROXY",help="Proxy server url without schema - %(default)s",default="localhost:9050")
+	parser.add_argument("-o","--output",metavar="FOLDER",help="Folder for saving contents - host")
+	parser.add_argument("-w","--workspace",metavar="PATH",help="Directory for saving contents - %(default)s",default=os.getcwd())
+	parser.add_argument('--use-tor',action='store_true',help="Use tor proxy - %(default)s")	
+	args = parser.parse_args()	
+	
+	global url,workspace,get_excep,output_folder,session
+	
+	logging.basicConfig(format="[%(asctime)s : %(levelname)s] - %(message)s",datefmt="%H:%M:%S",level=logging.INFO)
+	# URL of the web page you want to extract data from
+	url = args.host
+	if not url.startswith('http'):
+		url="https://"+url
+	
+	#define workspace from script location
+	workspace = args.workspace	
+	
+	get_excep = lambda e: e.args[1] if len(e.args)>1 else e
+	
+	output_folder = args.output or urlparse(url).netloc
+	# initialize a session
+	session = requests.session()
+	if args.use_tor:
+	   session.request = functools.partial(session.request, timeout=30)
+	   session.proxies = {'http':  f'socks5h://{args.tor_proxy}','https': f'socks5h://{args.tor_proxy}'}
+	   
+	try:
+		logging.info(f"Extracting files from '{url}'")
+		extractor = Extractor(url)
+		ectractor.run()
+		logging.info(f"\nTotal extracted files: {len(extractor.scraped_urls)}")
+	except (KeyboardInterrupt,EOFError) as e:
+		logging.warning(f'^{e} - Exitting"')
+	except Exception as e:
+		#logging.exception(e)
+		logging.critical(get_excep(e))
 
-print(f"Extracting files from {url}\n")
-extractor.run()
-print(f"\nTotal extracted files: {len(extractor.scraped_urls)}")
+if __name__=="__main__":
+	main()
