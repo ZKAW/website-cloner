@@ -39,44 +39,37 @@ $ wclone <url>
 
 </summary>
 
-<details>
-
 ```
- usage: wclone [-h] [-v]
-              [-tp PROXY]
-              [-o FOLDER]
-              [-w PATH]
+ usage: wclone [-h] [-v] [-tp PROXY]
+              [-o FOLDER] [-w PATH]
               [--use-tor]
               host
 
 Basic website cloner written in Python
 
-positional arguments:
-  host       URL pointing to a
-             website
-
+positional arguments:                  host         URL pointing to a
+               website               
 options:
-  -h, --help
-             show this help
-             message and exit
+  -h, --help   show this help
+               message and exit
   -v, ---version
-             show program's
-             version number and
-             exit
+               show program's
+               version number and
+               exit
   -tp PROXY, --tor-proxy PROXY
-             Proxy server url
-             without schema -
-             localhost:9050
+               Proxy server url
+               without schema -
+               localhost:9050
   -o FOLDER, --output FOLDER
-             Folder for saving
-             contents - host
+               Folder for saving
+               contents - host
   -w PATH, --workspace PATH
-             Directory for saving
-             contents - /storage/
-             emulated/0/git/Smart
-             wa/website-cloner
-  --use-tor  Use tor proxy -
-             False
+               Directory for saving
+               contents - /data/dat
+               a/com.termux/files/h
+               ome/temp
+  --use-tor    Use tor proxy -
+               False
 ```
 </details>
 

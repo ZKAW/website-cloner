@@ -248,7 +248,7 @@ def main():
 	try:
 		logging.info(f"Extracting files from '{url}'")
 		extractor = Extractor(url)
-		ectractor.run()
+		extractor.run()
 		logging.info(f"\nTotal extracted files: {len(extractor.scraped_urls)}")
 	except (KeyboardInterrupt,EOFError) as e:
 		logging.warning(f'^{e} - Exitting"')
