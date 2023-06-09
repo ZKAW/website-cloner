@@ -192,7 +192,7 @@ class Extractor:
         return new_url
 
     # download file from URL
-    def download_file(self, url, output_path):
+    def download_file(self, url, output_path, count=0):
 
         # Remove query string and http from URL
         url = url.split("?")[0]
@@ -206,10 +206,24 @@ class Extractor:
             os.makedirs(os.path.dirname(output_path))
 
         # Get file content and save it
-        response = session.get(url)
-        with open(output_path, "wb") as file:
-            file.write(response.content)
-            logging.info(f"Downloaded {file_name} to {os.path.relpath(output_path)}")
+        try:
+            response = session.get(url, stream=True)
+            if not response.ok:
+                logging.warning(f"Failed to get resource in URI '{url}'")
+                return True
+            with open(output_path, "wb") as file:
+                for chunk in response.iter_content(chunk_size=2048):
+                    file.write(chunk)
+                logging.info(
+                    f"Downloaded {file_name} to {os.path.relpath(output_path)}"
+                )
+        except requests.exceptions.ConnectionError as e:
+            if count < 1:
+                logging.warning(f"{get_excep(e)} with uri '{url}' retrying once...")
+                count += 1
+                return self.download_file(url, output_path, count)
+            else:
+                logging.error(f"{get_excep(e)} with uri '{url}'")
 
         return True
 
@@ -331,6 +345,13 @@ def main():
 
         with open(args.headers) as fh:
             session_def.headers = load(fh)
+    else:
+        session_def.headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
 
     session = cloudscraper.create_scraper(
         sess=session_def,
@@ -343,7 +364,7 @@ def main():
     logging.info(f"Extracting files from '{url}'")
     extractor = Extractor(url)
     extractor.run()
-    logging.info(f"\nTotal extracted files: {len(extractor.scraped_urls)}")
+    logging.info(f"Total extracted files: {len(extractor.scraped_urls)}")
 
 
 if __name__ == "__main__":
