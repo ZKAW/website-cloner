@@ -1,4 +1,4 @@
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __maintainer__ = "Smartwa"
 __author__ = "ZKAW"
 __description__ = "Basic website cloner written in Python"
