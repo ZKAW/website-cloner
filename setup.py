@@ -12,7 +12,7 @@ setup(
     packages=["wclone"],
     url=__repo__,
     project_urls={"Bug Report": f"{__repo__}/issues/new"},
-    install_requires=["bs4", "requests"],
+    install_requires=["bs4", "requests","cloudscraper==1.2.69"],
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     python_requires=">=3.8",
