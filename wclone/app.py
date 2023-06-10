@@ -10,6 +10,7 @@ import cloudscraper
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from . import __version__, __description__
+from json import load
 
 platforms = ["darwin", "ios", "android", "windows", "linux"]
 browsers = ["chrome", "firefox"]
@@ -28,7 +29,7 @@ class Extractor:
 
     def get_page_content(self, url):
         try:
-            content = session.get(url)
+            content = session.get(url, timeout=args.timeout)
             content.encoding = "utf-8"
             return content.text
         except Exception as e:
@@ -255,7 +256,7 @@ def error_handler():
             try:
                 return func(*args, **kwargs)
             except (KeyboardInterrupt, EOFError) as e:
-                logging.warning(f'^{e} - Exitting"')
+                logging.warning(f"^{e} - Exitting")
             except Exception as e:
                 # logging.exception(e)
                 logging.critical(get_excep(e))
@@ -285,7 +286,19 @@ def main():
         "-o", "--output", metavar="FOLDER", help="Folder for saving contents - host"
     )
     parser.add_argument(
-        "--headers", help="Path to .json file containing request headers"
+        "-t",
+        "--timeout",
+        help="Timeout while awaiting response (s) - %(default)s",
+        type=int,
+        default=20,
+    )
+    parser.add_argument(
+        "--headers",
+        help="Path to .json file containing request headers",
+        metavar="PATH",
+    )
+    parser.add_argument(
+        "--cookies", help="Path to .json file containing cookies", metavar="PATH"
     )
     parser.add_argument(
         "--browser",
@@ -311,9 +324,10 @@ def main():
     parser.add_argument(
         "--use-tor", action="store_true", help="Use tor proxy - %(default)s"
     )
-    args = parser.parse_args()
 
-    global url, workspace, get_excep, output_folder, session
+    global url, workspace, get_excep, output_folder, session, args
+
+    args = parser.parse_args()
 
     logging.basicConfig(
         format="[%(asctime)s : %(levelname)s] - %(message)s",
@@ -341,17 +355,20 @@ def main():
         }
 
     if args.headers:
-        from json import load
-
         with open(args.headers) as fh:
             session_def.headers = load(fh)
     else:
-        session_def.headers = {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Accept-Language": "en-US,en;q=0.9",
-        }
+        session_def.headers.update(
+            {
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+        )
+    if args.cookies:
+        with open(args.cookies) as fh:
+            session_def.cookies.update(load(fh))
 
     session = cloudscraper.create_scraper(
         sess=session_def,
@@ -364,7 +381,7 @@ def main():
     logging.info(f"Extracting files from '{url}'")
     extractor = Extractor(url)
     extractor.run()
-    logging.info(f"Total extracted files: {len(extractor.scraped_urls)}")
+    logging.info(f"Total extracted files : {len(extractor.scraped_urls)}")
 
 
 if __name__ == "__main__":
