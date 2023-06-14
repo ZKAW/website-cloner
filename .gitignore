@@ -1,0 +1,5 @@
+wclone.egg-info
+build
+*__pycache__
+.vscode
+dist
