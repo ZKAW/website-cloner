@@ -6,7 +6,7 @@
 
 **Usage:**
 ```bash
-python3 website_cloner.py <url>
+python3 app.py <url>
 ```
 
 **More info:**
